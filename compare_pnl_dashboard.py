@@ -50,7 +50,7 @@ METRIC_ROW_MAP = {
     # "options": "OPTIONS_TC",
     # "currency derivatives": "CURRENCY_TC",
     # "others(irf, wdm, commodity, mutual fund)": "OTHERS",
-    # TOTAL TRANSACTION CHARGES?????????
+    # "total transaction charges": "TOTAL_TRANSACTION_CHARGES",
     # "listing services": "LISTING_SERVICES",
     # "data centre and connectivity charges": "D_C_C_CHARGES",
     # "operating investment income": "O_INV_INCOME",
@@ -76,16 +76,16 @@ METRIC_ROW_MAP = {
     # "profit before exceptional items": "PROFIT_BEFORE_EXCEPTIONAL",
     # ??????? "less exceptional items": "EXCEPTIONAL_ITEM",
     # "profit before tax": "PROFIT_BEFORE_TAX",
-    # ????????????? "provision for tax": "LESS_PROVISION_FOR_TAX",
+    # "provision for tax": "LESS_PROVISION_FOR_TAX",
     # "profit after tax": "PROFIT_AFTER_TAX",
     # "expenditure linked to revenue":"EXPENDITURE_LINKED_REV",
-    # "expenditure linked to revenue|% of operating revenue": "OPERATING_REV_PERC_EXP" ??????????????
+    # "expenditure linked to revenue|% of operating revenue": "OPERATING_REV_PERC_EXP"
     # "balance expenditure": "BALANCE_EXPENDITURE"
     # "balance expenditure|% of operating revenue": "OPERATING_REV_PERC_BAL",
     # "operating profit": "OPERATING_PROFIT",
     # "operating profit margin (%)": "OPERATING_PROFIT_MARGIN",
-    # "operating ebita": "OPERATING_EBITA",
-    # "operating ebita margin (%)": "OPERATING_EBITA_MARGIN",
+    # "operating ebitda": "OPERATING_EBITDA",
+    # "operating ebitda margin (%)": "OPERATING_EBITDA_MARGIN",
     # "profit before tax margin (%)": "PROFIT_BEFORE_TAX_MARGIN"
     # "pat margin (%)": "PAT_MARGIN"
 }
