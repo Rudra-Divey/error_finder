@@ -71,7 +71,23 @@ METRIC_ROW_MAP = {
     # "other expenses": "OTHER_EXPENSES",
     # "total expenditure": "TOTAL_EXPENDITURE",
     # "profit before tax before ipft and sgf contribution": "PROFIT_B_TAX_B_IPFT_SGF_CONT",
-    # "less : contribution to ipft"
+    # "less : contribution to ipft": "LESS_CONT_TO_IPFT",
+    # "less : provision: contribution to core sgf": "LESS_PRO_CONT_TO_CORE_SGF",
+    # "profit before exceptional items": "PROFIT_BEFORE_EXCEPTIONAL",
+    # ??????? "less exceptional items": "EXCEPTIONAL_ITEM",
+    # "profit before tax": "PROFIT_BEFORE_TAX",
+    # ????????????? "provision for tax": "LESS_PROVISION_FOR_TAX",
+    # "profit after tax": "PROFIT_AFTER_TAX",
+    # "expenditure linked to revenue":"EXPENDITURE_LINKED_REV",
+    # "expenditure linked to revenue|% of operating revenue": "OPERATING_REV_PERC_EXP" ??????????????
+    # "balance expenditure": "BALANCE_EXPENDITURE"
+    # "balance expenditure|% of operating revenue": "OPERATING_REV_PERC_BAL",
+    # "operating profit": "OPERATING_PROFIT",
+    # "operating profit margin (%)": "OPERATING_PROFIT_MARGIN",
+    # "operating ebita": "OPERATING_EBITA",
+    # "operating ebita margin (%)": "OPERATING_EBITA_MARGIN",
+    # "profit before tax margin (%)": "PROFIT_BEFORE_TAX_MARGIN"
+    # "pat margin (%)": "PAT_MARGIN"
 }
 
 TOLERANCE = 1e-4  # decimal comparison tolerance
@@ -158,10 +174,16 @@ def parse_excel_columns(raw: pd.DataFrame) -> list[ColumnInfo]:
 def parse_excel_metric_rows(raw: pd.DataFrame) -> dict[int, str]:
     """Map row index -> SQL column name, based on the label in column C (idx 2)."""
     row_map = {}
+    previous_label = None                        # memory variable
     for row_idx in range(raw.shape[0]):
         label = raw.iloc[row_idx, 2]
         if isinstance(label, str):
-            key = label.strip().lower()
+            clean = label.strip().lower()
+            if clean == "% of operating revenue":
+                key = f"{previous_label}|% of operating revenue"   # combine with row above
+            else:
+                key = clean
+                previous_label = clean           # update memory for next row
             if key in METRIC_ROW_MAP:
                 row_map[row_idx] = METRIC_ROW_MAP[key]
     return row_map
