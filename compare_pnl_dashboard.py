@@ -48,7 +48,7 @@ METRIC_ROW_MAP = {
     # "cash markets": "CM_TC",
     # "futures": "FUTURE_TC",
     # "options": "OPTIONS_TC",
-    # "currency derivatives": "CURRENCY",
+    # "currency derivatives": "CURRENCY_TC",
     # "others(irf, wdm, commodity, mutual fund)": "OTHERS",
     # TOTAL TRANSACTION CHARGES?????????
     # "listing services": "LISTING_SERVICES",
