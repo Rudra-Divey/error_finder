@@ -25,7 +25,7 @@ from dotenv import load_dotenv
 # This loads the environment variables from your .env file
 load_dotenv() 
 
-EXCEL_PATH = r"C:\Users\Rudra S Divey\Desktop\NSE_Project\tbl_pnl_dashboard_completed.xlsx"
+EXCEL_PATH = r"C:\Users\HP\OneDrive - BIRLA INSTITUTE OF TECHNOLOGY and SCIENCE\Desktop\NSEProject2\tbl_pnl_dashboard_completed.xlsx"
 SHEET_NAME = "tbl_pnl_dashboard"
 TABLE_NAME = "tbl_pnl_dashboard"
 
@@ -45,49 +45,49 @@ METRIC_ROW_MAP = {
     "options : premium turnover": "OPTIONS_ADTV",
     "currency futures : turnover": "CURRENCY_FUTURE",
     "currency options : turnover": "CURRENCY_OPTION",
-    # "cash markets": "CM_TC",
-    # "futures": "FUTURE_TC",
-    # "options": "OPTIONS_TC",
-    # "currency derivatives": "CURRENCY_TC",
-    # "others(irf, wdm, commodity, mutual fund)": "OTHERS",
-    # "total transaction charges": "TOTAL_TRANSACTION_CHARGES",
-    # "listing services": "LISTING_SERVICES",
-    # "data centre and connectivity charges": "D_C_C_CHARGES",
-    # "operating investment income": "O_INV_INCOME",
-    # "other operating income": "OTHER_O_INCOME",
-    # "total operating income": "TOTAL_O_INCOME",
-    # "interest & other investment income": "INTEREST_OTHER_INV_INCOME",
-    # "subsidiary dividend": "SUBSIDIARY_DIVIDEND",
-    # "other income": "OTHER_INCOME",
-    # "total non operting income": "TOTAL_NON_OP_INCOME",
-    # "total income": "TOTAL_INCOME",
-    # "empolyee expenses": "EMP_EXP",
-    # "clearing and settlement charges": "CLEARING_SETTLEMENT_CHARGES",
-    # "regulatory expenses": "REGULATORY_EXP",
-    # "sebi settlement fees / penalty / provisions": "SEBI_SETTLEMENT_FEES_PENALTY_PROV",
-    # "depriciation": "DEPRICIATION",
-    # "technology expenses": "TECHNOLOGY_EXP",
-    # "other variable expense - sms & les, license fees for index":"O_VAR_SMS_LES_LICENSE_FEES_INDEX",
-    # "other expenses": "OTHER_EXPENSES",
-    # "total expenditure": "TOTAL_EXPENDITURE",
-    # "profit before tax before ipft and sgf contribution": "PROFIT_B_TAX_B_IPFT_SGF_CONT",
-    # "less : contribution to ipft": "LESS_CONT_TO_IPFT",
-    # "less : provision: contribution to core sgf": "LESS_PRO_CONT_TO_CORE_SGF",
-    # "profit before exceptional items": "PROFIT_BEFORE_EXCEPTIONAL",
-    # ??????? "less exceptional items": "EXCEPTIONAL_ITEM",
-    # "profit before tax": "PROFIT_BEFORE_TAX",
-    # "provision for tax": "LESS_PROVISION_FOR_TAX",
-    # "profit after tax": "PROFIT_AFTER_TAX",
-    # "expenditure linked to revenue":"EXPENDITURE_LINKED_REV",
-    # "expenditure linked to revenue|% of operating revenue": "OPERATING_REV_PERC_EXP"
-    # "balance expenditure": "BALANCE_EXPENDITURE"
-    # "balance expenditure|% of operating revenue": "OPERATING_REV_PERC_BAL",
-    # "operating profit": "OPERATING_PROFIT",
-    # "operating profit margin (%)": "OPERATING_PROFIT_MARGIN",
-    # "operating ebitda": "OPERATING_EBITDA",
-    # "operating ebitda margin (%)": "OPERATING_EBITDA_MARGIN",
-    # "profit before tax margin (%)": "PROFIT_BEFORE_TAX_MARGIN"
-    # "pat margin (%)": "PAT_MARGIN"
+    "cash markets": "CM_TC",
+    "futures": "FUTURE_TC",
+    "options": "OPTIONS_TC",
+    "currency derivatives": "CURRENCY_TC",
+    "others(irf, wdm, commodity, mutual fund)": "OTHERS",
+    "total transaction charges": "TOTAL_TRANSACTION_CHARGES",
+    "listing services": "LISTING_SERVICES",
+    "data centre and connectivity charges": "D_C_C_CHARGES",
+    "operating investment income": "O_INV_INCOME",
+    "other operating income": "OTHER_O_INCOME",
+    "total operating income": "TOTAL_O_INCOME",
+    "interest & other investment income": "INTEREST_OTHER_INV_INCOME",
+    "subsidiary dividend": "SUBSIDIARY_DIVIDEND",
+    "other income": "OTHER_INCOME",
+    "total non operting income": "TOTAL_NON_OP_INCOME",
+    "total income": "TOTAL_INCOME",
+    "empolyee expenses": "EMP_EXP",
+    "clearing and settlement charges": "CLEARING_SETTLEMENT_CHARGES",
+    "regulatory expenses": "REGULATORY_EXP",
+    "sebi settlement fees / penalty / provisions": "SEBI_SETTLEMENT_FEES_PENALTY_PROV",
+    "depriciation": "DEPRICIATION",
+    "technology expenses": "TECHNOLOGY_EXP",
+    "other variable expense - sms & les, license fees for index":"O_VAR_SMS_LES_LICENSE_FEES_INDEX",
+    "other expenses": "OTHER_EXPENSES",
+    "total expenditure": "TOTAL_EXPENDITURE",
+    "profit before tax before ipft and sgf contribution": "PROFIT_B_TAX_B_IPFT_SGF_CONT",
+    "less : contribution to ipft": "LESS_CONT_TO_IPFT",
+    "less : provision: contribution to core sgf": "LESS_PRO_CONT_TO_CORE_SGF",
+    "profit before exceptional items": "PROFIT_BEFORE_EXCEPTIONAL",
+    "less exceptional items": "EXCEPTIONAL_ITEM",
+    "profit before tax": "PROFIT_BEFORE_TAX",
+    "provision for tax": "LESS_PROVISION_FOR_TAX",
+    "profit after tax": "PROFIT_AFTER_TAX",
+    "expenditure linked to revenue":"EXPENDITURE_LINKED_REV",
+    "expenditure linked to revenue|% of operating revenue": "OPERATING_REV_PERC_EXP",
+    "balance expenditure": "BALANCE_EXPENDITURE",
+    "balance expenditure|% of operating revenue": "OPERATING_REV_PERC_BAL",
+    "operating profit": "OPERATING_PROFIT",
+    "operating profit margin (%)": "OPERATING_PROFIT_MARGIN",
+    "operating ebitda": "OPERATING_EBITDA",
+    "operating ebitda margin (%)": "OPERATING_EBITDA_MARGIN",
+    "profit before tax margin (%)": "PROFIT_BEFORE_TAX_MARGIN",
+    "pat margin (%)": "PAT_MARGIN",
 }
 
 TOLERANCE = 1e-4  # decimal comparison tolerance
@@ -267,7 +267,7 @@ def main():
     else:
         print("\nAll cells matched their corresponding SQL rows.")
 
-    out_path = r"C:\Users\Rudra S Divey\Desktop\NSE_Project\tbl_pnl_dashboard_report.xlsx"
+    out_path = r"C:\Users\HP\OneDrive - BIRLA INSTITUTE OF TECHNOLOGY and SCIENCE\Desktop\NSEProject2\tbl_pnl_dashboard_report.xlsx"
     report.to_excel(out_path, index=False)
     print(f"\nFull report written to {out_path}")
 
