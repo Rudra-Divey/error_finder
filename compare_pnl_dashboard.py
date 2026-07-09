@@ -28,6 +28,7 @@ load_dotenv()
 EXCEL_PATH = r"C:\Users\HP\OneDrive - BIRLA INSTITUTE OF TECHNOLOGY and SCIENCE\Desktop\NSEProject2\tbl_pnl_dashboard_completed.xlsx"
 SHEET_NAME = "tbl_pnl_dashboard"
 TABLE_NAME = "tbl_pnl_dashboard"
+OUT_PATH = r"C:\Users\HP\OneDrive - BIRLA INSTITUTE OF TECHNOLOGY and SCIENCE\Desktop\NSEProject2\tbl_pnl_dashboard_report.xlsx"
 
 # Map the text found in the "For the X ended ..." header to the SQL ENUM value
 FREQUENCY_MAP = {
@@ -263,9 +264,8 @@ def main():
         print(f"Matches: {col_no}")
         print("Issues:  0")
         print("\nAll cells matched their corresponding SQL rows.")
-        out_path = r"C:\Users\HP\OneDrive - BIRLA INSTITUTE OF TECHNOLOGY and SCIENCE\Desktop\NSEProject2\tbl_pnl_dashboard_report.xlsx"
-        pd.DataFrame(["All cells matched their corresponding SQL rows."]).to_excel(out_path, index=False, header=False)
-        print(f"\nFull report written to {out_path}")
+        pd.DataFrame(["All cells matched their corresponding SQL rows."]).to_excel(OUT_PATH, index=False, header=False)
+        print(f"\nFull report written to {OUT_PATH}")
 
     else:
         results = pd.DataFrame(results)
@@ -274,9 +274,8 @@ def main():
         print(f"Issues:  {len(results)}")
         print("\n--- Issues found ---")
         print(results.to_string(index=False))
-        out_path = r"C:\Users\HP\OneDrive - BIRLA INSTITUTE OF TECHNOLOGY and SCIENCE\Desktop\NSEProject2\tbl_pnl_dashboard_report.xlsx"
-        results.to_excel(out_path, index=False)
-        print(f"\nFull report written to {out_path}")
+        results.to_excel(OUT_PATH, index=False)
+        print(f"\nFull report written to {OUT_PATH}")
 
 
 if __name__ == "__main__":
