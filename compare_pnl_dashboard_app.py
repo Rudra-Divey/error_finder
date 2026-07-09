@@ -261,6 +261,7 @@ def main():
     if not results:
         print(f"Total cells checked: {col_no}")
         print(f"Matches: {col_no}")
+        print("Issues:  0")
         print("\nAll cells matched their corresponding SQL rows.")
         out_path = r"C:\Users\HP\OneDrive - BIRLA INSTITUTE OF TECHNOLOGY and SCIENCE\Desktop\NSEProject2\tbl_pnl_dashboard_report.xlsx"
         pd.DataFrame(["All cells matched their corresponding SQL rows."]).to_excel(out_path, index=False, header=False)
