@@ -16,6 +16,7 @@ import os
 import re
 import math
 import sys
+from collections import defaultdict
 from dataclasses import dataclass
 
 import pandas as pd
@@ -25,10 +26,10 @@ from dotenv import load_dotenv
 # This loads the environment variables from your .env file
 load_dotenv() 
 
-EXCEL_PATH = r"C:\Users\HP\OneDrive - BIRLA INSTITUTE OF TECHNOLOGY and SCIENCE\Desktop\NSEProject2\tbl_pnl_dashboard_completed.xlsx"
+EXCEL_PATH = r"C:\Users\Rudra S Divey\Desktop\NSE_Project\tbl_pnl_dashboard_completed.xlsx"
 SHEET_NAME = "tbl_pnl_dashboard"
 TABLE_NAME = "tbl_pnl_dashboard"
-OUT_PATH = r"C:\Users\HP\OneDrive - BIRLA INSTITUTE OF TECHNOLOGY and SCIENCE\Desktop\NSEProject2\tbl_pnl_dashboard_report.xlsx"
+OUT_PATH =  r"C:\Users\Rudra S Divey\Desktop\NSE_Project\tbl_pnl_dashboard_report.xlsx"
 
 # Map the text found in the "For the X ended ..." header to the SQL ENUM value
 FREQUENCY_MAP = {
@@ -80,9 +81,9 @@ METRIC_ROW_MAP = {
     "provision for tax": "LESS_PROVISION_FOR_TAX",
     "profit after tax": "PROFIT_AFTER_TAX",
     "expenditure linked to revenue":"EXPENDITURE_LINKED_REV",
-    "expenditure linked to revenue|% of operating revenue": "OPERATING_REV_PERC_EXP",
+    r"expenditure linked to revenue|% of operating revenue": "OPERATING_REV_PERC_EXP",
     "balance expenditure": "BALANCE_EXPENDITURE",
-    "balance expenditure|% of operating revenue": "OPERATING_REV_PERC_BAL",
+    r"balance expenditure|% of operating revenue": "OPERATING_REV_PERC_BAL",
     "operating profit": "OPERATING_PROFIT",
     "operating profit margin (%)": "OPERATING_PROFIT_MARGIN",
     "operating ebitda": "OPERATING_EBITDA",
@@ -141,6 +142,19 @@ def load_sql_table(engine, columns, metric_rows) -> pd.DataFrame:
     df["DUPLOAD_DATE"] = pd.to_datetime(df["DUPLOAD_DATE"]).dt.date
     return df
 
+def build_sql_lookup(sql_df: pd.DataFrame) -> dict:
+    """
+    Build a {(flag, frequency, date): [row, row, ...]} dict once, so each
+    Excel cell can be resolved with an O(1) dict lookup instead of a fresh
+    boolean-mask scan of sql_df (which was previously happening once per
+    metric-row * per-column, i.e. potentially thousands of full-table scans).
+    """
+    lookup = defaultdict(list)
+    # itertuples is much faster than iterating with .iloc / boolean masks
+    for row in sql_df.itertuples(index=False):
+        key = (row.FLAG, row.FREQUENCY, row.DUPLOAD_DATE)
+        lookup[key].append(row)
+    return lookup
 
 def parse_excel_columns(raw: pd.DataFrame) -> list[ColumnInfo]:
     """Walk the period-header row and the NSE/BSE row to build column metadata."""
@@ -218,17 +232,23 @@ def main():
     # Step 2: fetch only the rows and columns we actually need from SQL
     sql_df = load_sql_table(engine, columns, metric_rows)
 
+      # Step 3: build the (flag, frequency, date) -> [rows] lookup ONCE.
+    # This replaces the old approach of re-filtering sql_df with a boolean
+    # mask inside the nested (metric_row x column) loop below, which scanned
+    # the whole table on every single cell.
+    sql_lookup = build_sql_lookup(sql_df)
+ 
     results = []
-    col_no = 0
+    total_checked = 0
     for row_idx, sql_col in metric_rows.items():
         for col in columns:
+            total_checked += 1
             excel_val = raw.iloc[row_idx, col.col_idx]
-
-            match = sql_df[(sql_df["FLAG"] == col.flag) &
-                           (sql_df["FREQUENCY"] == col.frequency) &
-                           (sql_df["DUPLOAD_DATE"] == col.period_date)]
-
-            if match.empty:
+ 
+            key = (col.flag, col.frequency, col.period_date)
+            match = sql_lookup.get(key, [])
+ 
+            if not match:
                 results.append({
                     "row": row_idx + 1, "col": col.col_idx + 1,
                     "metric": sql_col, "flag": col.flag, "frequency": col.frequency,
@@ -246,8 +266,8 @@ def main():
                     "status": "MULTIPLE SQL ROWS MATCHED (ambiguous)",
                 })
                 continue
-
-            sql_val = match.iloc[0][sql_col]
+ 
+            sql_val = getattr(match[0], sql_col)
             ok = values_match(excel_val, sql_val)
             if not ok:
                 results.append({
@@ -255,28 +275,26 @@ def main():
                     "metric": sql_col, "flag": col.flag, "frequency": col.frequency,
                     "date": col.period_date,
                     "excel_value": excel_val, "sql_value": sql_val,
-                    "status":"MISMATCH",
+                    "status": "MISMATCH",
                 })
-            col_no += 1
-    
+ 
     if not results:
-        print(f"Total cells checked: {col_no}")
-        print(f"Matches: {col_no}")
+        print(f"Total cells checked: {total_checked}")
+        print(f"Matches: {total_checked}")
         print("Issues:  0")
         print("\nAll cells matched their corresponding SQL rows.")
         pd.DataFrame(["All cells matched their corresponding SQL rows."]).to_excel(OUT_PATH, index=False, header=False)
         print(f"\nFull report written to {OUT_PATH}")
-
+ 
     else:
         results = pd.DataFrame(results)
-        print(f"Total cells checked: {col_no}")
-        print(f"Matches: {col_no - len(results)}")
+        print(f"Total cells checked: {total_checked}")
+        print(f"Matches: {total_checked - len(results)}")
         print(f"Issues:  {len(results)}")
         print("\n--- Issues found ---")
         print(results.to_string(index=False))
         results.to_excel(OUT_PATH, index=False)
         print(f"\nFull report written to {OUT_PATH}")
-
 
 if __name__ == "__main__":
     main()
