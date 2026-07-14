@@ -18,18 +18,27 @@ import math
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
-
 import pandas as pd
 from sqlalchemy import create_engine
 from dotenv import load_dotenv  
 
-# This loads the environment variables from your .env file
+# Load DB credentials and other environment variables from a local .env file
 load_dotenv() 
+
+
+# ---------------------------------------------------------------------------
+# File / table configuration
+# ---------------------------------------------------------------------------
 
 EXCEL_PATH = r"C:\Users\Rudra S Divey\Desktop\NSE_Project\tbl_pnl_dashboard_completed.xlsx"
 SHEET_NAME = "tbl_pnl_dashboard"
 TABLE_NAME = "tbl_pnl_dashboard"
 OUT_PATH =  r"C:\Users\Rudra S Divey\Desktop\NSE_Project\tbl_pnl_dashboard_report.xlsx"
+
+
+# ---------------------------------------------------------------------------
+# Lookup tables
+# ---------------------------------------------------------------------------
 
 # Map the text found in the "For the X ended ..." header to the SQL ENUM value
 FREQUENCY_MAP = {
@@ -92,11 +101,17 @@ METRIC_ROW_MAP = {
     "pat margin (%)": "PAT_MARGIN",
 }
 
-TOLERANCE = 1e-4  # decimal comparison tolerance
+# Cells whose absolute difference is within this threshold are treated as equal,
+# guarding against floating-point rounding differences between Excel and MySQL.
+TOLERANCE = 1e-4
 
-
+# Regex that matches a date like "January 1, 2026" or "Jan 1, 2026" in a header cell.
 DATE_PATTERN = r"[A-Za-z]+\s+\d{1,2},\s*\d{4}"
 
+
+# ---------------------------------------------------------------------------
+# Data structures
+# ---------------------------------------------------------------------------
 
 @dataclass
 class ColumnInfo:
@@ -106,7 +121,12 @@ class ColumnInfo:
     period_date: object  # the date parsed from the header text (pandas Timestamp)
 
 
+# ---------------------------------------------------------------------------
+# Database helpers
+# ---------------------------------------------------------------------------
+
 def get_engine():
+    """Build and return a SQLAlchemy engine from environment variables."""
     host = os.environ["MYSQL_HOST"]
     user = os.environ["MYSQL_USER"]
     password = os.environ["MYSQL_PASSWORD"]
@@ -136,6 +156,7 @@ def load_sql_table(engine, columns, metric_rows) -> pd.DataFrame:
 
     query = f"SELECT {select_cols} FROM {TABLE_NAME} WHERE {where_clause}"
 
+    # Normalise types so lookups are consistent regardless of DB driver quirks.
     df = pd.read_sql(query, engine)
     df["FLAG"] = df["FLAG"].astype(str).str.upper()
     df["FREQUENCY"] = df["FREQUENCY"].astype(str).str.upper()
@@ -145,9 +166,7 @@ def load_sql_table(engine, columns, metric_rows) -> pd.DataFrame:
 def build_sql_lookup(sql_df: pd.DataFrame) -> dict:
     """
     Build a {(flag, frequency, date): [row, row, ...]} dict once, so each
-    Excel cell can be resolved with an O(1) dict lookup instead of a fresh
-    boolean-mask scan of sql_df (which was previously happening once per
-    metric-row * per-column, i.e. potentially thousands of full-table scans).
+    Excel cell can be resolved with an O(1) dict lookup
     """
     lookup = defaultdict(list)
     # itertuples is much faster than iterating with .iloc / boolean masks
@@ -155,6 +174,11 @@ def build_sql_lookup(sql_df: pd.DataFrame) -> dict:
         key = (row.FLAG, row.FREQUENCY, row.DUPLOAD_DATE)
         lookup[key].append(row)
     return lookup
+
+
+# ---------------------------------------------------------------------------
+# Excel parsing helpers
+# ---------------------------------------------------------------------------
 
 def parse_excel_columns(raw: pd.DataFrame) -> list[ColumnInfo]:
     """Walk the period-header row and the NSE/BSE row to build column metadata."""
@@ -165,18 +189,24 @@ def parse_excel_columns(raw: pd.DataFrame) -> list[ColumnInfo]:
     current_frequency = None
     current_period_date = None
     for col_idx in range(raw.shape[1]):
+        # When we hit a period header, update the running context variables.
         period_text = period_row[col_idx]
         if isinstance(period_text, str) and period_text.strip():
             text_lower = period_text.lower()
+
+            # Extract the frequency keyword (day / week / month / ...).
             for key, freq in FREQUENCY_MAP.items():
                 if key in text_lower:
                     current_frequency = freq
                     break
 
+            # Extract the period-end date, e.g. "January 1, 2026".
             date_found = re.search(DATE_PATTERN, period_text)
             if date_found:
                 current_period_date = pd.to_datetime(date_found.group()).date()
 
+        # When we hit an exchange flag cell, record a ColumnInfo using whatever
+        # frequency/date context was most recently set.
         flag_text = flag_row[col_idx]
         if isinstance(flag_text, str) and flag_text.strip().upper() in ("NSE", "BSE"):
             if current_frequency is None or current_period_date is None:
@@ -204,21 +234,35 @@ def parse_excel_metric_rows(raw: pd.DataFrame) -> dict[int, str]:
     return row_map
 
 
+# ---------------------------------------------------------------------------
+# Comparison helper
+# ---------------------------------------------------------------------------
+
 def values_match(excel_val, sql_val) -> bool:
+    # Treat Excel NaN and Python None as "missing"
     if excel_val is None or (isinstance(excel_val, float) and math.isnan(excel_val)):
         return sql_val is None
     if sql_val is None:
         return False
+    
+    # Numeric comparison with tolerance
     try:
         return math.isclose(float(excel_val), float(sql_val), abs_tol=TOLERANCE)
     except (TypeError, ValueError):
+        # Fall back to string comparison for non-numeric values
         return str(excel_val).strip() == str(sql_val).strip()
 
+
+# ---------------------------------------------------------------------------
+# Main entry point
+# ---------------------------------------------------------------------------
 
 def main():
     engine = get_engine()
 
+    # --------------------------------------------------------------------
     # Step 1: parse Excel first so we know exactly what to fetch from SQL
+     # -------------------------------------------------------------------
     raw = pd.read_excel(EXCEL_PATH, sheet_name=SHEET_NAME, header=None)
 
     columns = parse_excel_columns(raw)
@@ -228,16 +272,25 @@ def main():
         sys.exit("No NSE/BSE columns detected in the Excel header rows - check sheet layout.")
     if not metric_rows:
         sys.exit("No metric rows detected in column C - check sheet layout.")
-
+    
+    # -------------------------------------------------------------------
     # Step 2: fetch only the rows and columns we actually need from SQL
+    # -------------------------------------------------------------------
+
     sql_df = load_sql_table(engine, columns, metric_rows)
 
-      # Step 3: build the (flag, frequency, date) -> [rows] lookup ONCE.
-    # This replaces the old approach of re-filtering sql_df with a boolean
-    # mask inside the nested (metric_row x column) loop below, which scanned
-    # the whole table on every single cell.
+    # ------------------------------------------------------------------
+    # Step 3: Build an O(1) lookup dict so the cell-comparison loop below
+    # never has to scan sql_df more than once.
+    # ------------------------------------------------------------------
+
     sql_lookup = build_sql_lookup(sql_df)
  
+    # ------------------------------------------------------------------
+    # Step 4: Compare every (metric_row × data_column) cell.
+    # Only mismatches and lookup failures are recorded; matches are silent.
+    # ------------------------------------------------------------------
+
     results = []
     total_checked = 0
     for row_idx, sql_col in metric_rows.items():
@@ -249,6 +302,7 @@ def main():
             match = sql_lookup.get(key, [])
  
             if not match:
+                # No SQL row found for this (flag, frequency, date) combination.
                 results.append({
                     "row": row_idx + 1, "col": col.col_idx + 1,
                     "metric": sql_col, "flag": col.flag, "frequency": col.frequency,
@@ -258,6 +312,7 @@ def main():
                 })
                 continue
             if len(match) > 1:
+                # More than one SQL row matches the key - data integrity issue.
                 results.append({
                     "row": row_idx + 1, "col": col.col_idx + 1,
                     "metric": sql_col, "flag": col.flag, "frequency": col.frequency,
@@ -266,7 +321,8 @@ def main():
                     "status": "MULTIPLE SQL ROWS MATCHED (ambiguous)",
                 })
                 continue
- 
+
+            # Exactly one SQL row matched - perform the value comparison.
             sql_val = getattr(match[0], sql_col)
             ok = values_match(excel_val, sql_val)
             if not ok:
@@ -278,6 +334,10 @@ def main():
                     "status": "MISMATCH",
                 })
  
+    # ------------------------------------------------------------------
+    # Step 5: Write the report.
+    # ------------------------------------------------------------------
+    
     if not results:
         print(f"Total cells checked: {total_checked}")
         print(f"Matches: {total_checked}")
